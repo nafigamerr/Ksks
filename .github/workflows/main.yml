@@ -1,0 +1,26 @@
+name: Debug Workflow with tmate
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install tmate
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tmate
+
+      - name: Start tmate Session
+        run: |
+          tmate -S /tmp/tmate.sock new-session -d
+          tmate -S /tmp/tmate.sock wait tmate-ready
+          echo "SSH to your runner: $(tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}')"
+          echo "Web session: $(tmate -S /tmp/tmate.sock display -p '#{tmate_web}')"
+          while :; do sleep 1; done
