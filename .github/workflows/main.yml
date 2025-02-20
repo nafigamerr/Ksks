@@ -12,6 +12,9 @@ jobs:
       run: |
         wget https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb
         sudo dpkg -i chrome-remote-desktop_current_amd64.deb || sudo apt --fix-broken install -y
+    - name: Unmask and Enable CRD Service
+      run: |
+        sudo systemctl unmask chrome-remote-desktop
         sudo systemctl enable chrome-remote-desktop
     - name: Setup Chrome Remote Desktop
       run: |
