@@ -1,26 +1,17 @@
-name: Debug Workflow with tmate
-
-on:
-  push:
-    branches:
-      - main
-
+name: Windows RDP
+on: workflow_dispatch
 jobs:
-  debug:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Install tmate
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y tmate
-
-      - name: Start tmate Session
-        run: |
-          tmate -S /tmp/tmate.sock new-session -d
-          tmate -S /tmp/tmate.sock wait tmate-ready
-          echo "SSH to your runner: $(tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}')"
-          echo "Web session: $(tmate -S /tmp/tmate.sock display -p '#{tmate_web}')"
-          while :; do sleep 1; done
+    - name: Set up Chrome Remote Desktop
+      run: |
+        sudo apt update
+        sudo apt install -y wget curl
+        wget https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb
+        sudo dpkg -i chrome-remote-desktop_current_amd64.deb
+        sudo apt --fix-broken install -y
+        sudo systemctl enable chrome-remote-desktop
+        echo "DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="4/0ASVgi3IOAHTRfOx7aOWXiYOD2pEejrem3bemmwpYM97qeUailQinR1-8BLTcZEqYfUqCZA" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)" | bash
+    - name: Keep Alive
+      run: sleep 86400
