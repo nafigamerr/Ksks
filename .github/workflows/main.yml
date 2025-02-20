@@ -4,14 +4,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Chrome Remote Desktop
+    - name: Update System and Install Dependencies
       run: |
         sudo apt update
-        sudo apt install -y wget curl
+        sudo apt install -y wget curl xserver-xorg-video-dummy policykit-1 xbase-clients python3-psutil python3-xdg gsettings-desktop-schemas
+    - name: Download and Install Chrome Remote Desktop
+      run: |
         wget https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb
-        sudo dpkg -i chrome-remote-desktop_current_amd64.deb
-        sudo apt --fix-broken install -y
+        sudo dpkg -i chrome-remote-desktop_current_amd64.deb || sudo apt --fix-broken install -y
         sudo systemctl enable chrome-remote-desktop
-        echo "DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="4/0ASVgi3IOAHTRfOx7aOWXiYOD2pEejrem3bemmwpYM97qeUailQinR1-8BLTcZEqYfUqCZA" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)" | bash
+    - name: Setup Chrome Remote Desktop
+      run: |
+        echo "DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="4/0ASVgi3Kb1k0KfKloLA0EMOUXN5Kb1tKJ2ZjE2l6aKLzrQo_67dJjscQrMJTe98RdYhmWZg" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)" | bash
     - name: Keep Alive
       run: sleep 86400
