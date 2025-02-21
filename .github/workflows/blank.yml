@@ -19,33 +19,34 @@ jobs:
     - name: Start Serveo Tunnel with random port
       shell: pwsh
       run: |
-        # Start the Serveo SSH tunnel in the background, letting Serveo choose an available remote port.
+        # Start the Serveo SSH tunnel in the background, letting Serveo assign a random remote port.
         Start-Process -NoNewWindow -FilePath "ssh" -ArgumentList '-o', 'StrictHostKeyChecking=no', '-R', '0:localhost:3389', 'serveo.net', '-N' -RedirectStandardOutput serveo_out.log -RedirectStandardError serveo_err.log
 
-        # Wait up to 30 seconds for the tunnel to initialize and log the public address.
+        # Wait up to 30 seconds for the tunnel to initialize.
         $tunnelAddress = ""
         $timeout = 30
         while ($timeout -gt 0 -and -not $tunnelAddress) {
           Start-Sleep -Seconds 2
-          # Look for the forwarding line in both log files.
-          $tunnelAddress = (Get-Content serveo_err.log, serveo_out.log | Select-String -Pattern 'Forwarding TCP connections from').Line
+          $tunnelAddress = (Get-Content serveo_err.log, serveo_out.log | Select-String -Pattern 'Allocated port').Line
           $timeout -= 2
         }
 
         if ($tunnelAddress) {
-          Write-Output "Tunnel Address Found: $tunnelAddress"
-          # Extract the actual host and port from the line (assuming the line contains something like:
-          # "Forwarding TCP connections from serveo.net:XXXXX")
-          if ($tunnelAddress -match 'serveo\.net:(\d+)') {
+          Write-Output "Tunnel Log: $tunnelAddress"
+          if ($tunnelAddress -match 'Allocated port (\d+)') {
             $port = $Matches[1]
-            Write-Output "You can connect using: serveo.net:$port"
+            Write-Output "You can connect via: serveo.net:$port"
           } else {
-            Write-Output "Could not parse the tunnel address. Full line: $tunnelAddress"
+            Write-Output "Could not parse the allocated port. Check the logs below:"
+            Get-Content serveo_err.log, serveo_out.log
           }
         } else {
-          Write-Output "Tunnel address not found in logs."
-          Write-Output "StdOut Log:"
-          Get-Content serveo_out.log
-          Write-Output "StdErr Log:"
-          Get-Content serveo_err.log
+          Write-Output "Tunnel address not found in logs. Please review the logs:"
+          Get-Content serveo_err.log, serveo_out.log
         }
+
+    - name: Keep Tunnel Running
+      shell: pwsh
+      run: |
+        Write-Output "Tunnel is running. This job will now wait indefinitely to keep the tunnel active."
+        while ($true) { Start-Sleep -Seconds 60 }
