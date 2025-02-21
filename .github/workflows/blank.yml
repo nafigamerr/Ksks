@@ -16,9 +16,12 @@ jobs:
     - name: Set Password for runneradmin
       run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
 
-    - name: Start Serveo Tunnel
+    - name: Start Serveo Tunnel with random port
       shell: pwsh
       run: |
-        # Start the Serveo SSH tunnel in the background.
-        Start-Process -NoNewWindow -FilePath "ssh" -ArgumentList '-o StrictHostKeyChecking=no -R 3389:localhost:3389 serveo.net -N'
-        Write-Output "Tunnel initiated. Check the workflow logs for a line like 'Forwarding TCP connections from serveo.net:<port>'."
+        # Start the Serveo SSH tunnel in the background, letting Serveo choose a random port.
+        Start-Process -NoNewWindow -FilePath "ssh" -ArgumentList '-o', 'StrictHostKeyChecking=no', '-R', '0:localhost:3389', 'serveo.net', '-N' -RedirectStandardOutput serveo.log -RedirectStandardError serveo.log
+        # Wait a bit for the tunnel to initialize.
+        Start-Sleep -Seconds 10
+        Write-Output "Tunnel log output (look for 'Forwarding TCP connections'):"
+        Get-Content serveo.log
