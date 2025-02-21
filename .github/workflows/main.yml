@@ -1,23 +1,49 @@
-name: Windows RDP
-on: workflow_dispatch
+name: CI
+
+
+
+on: [push, workflow_dispatch]
+
+
+
 jobs:
+
   build:
-    runs-on: ubuntu-latest
+
+
+
+    runs-on: windows-latest
+
+
+
     steps:
-    - name: Update System and Install Dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y wget curl xserver-xorg-video-dummy policykit-1 xbase-clients python3-psutil python3-xdg gsettings-desktop-schemas
-    - name: Download and Install Chrome Remote Desktop
-      run: |
-        wget https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb
-        sudo dpkg -i chrome-remote-desktop_current_amd64.deb || sudo apt --fix-broken install -y
-    - name: Unmask and Enable CRD Service
-      run: |
-        sudo systemctl unmask chrome-remote-desktop
-        sudo systemctl enable chrome-remote-desktop
-    - name: Setup Chrome Remote Desktop
-      run: |
-        echo "DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="4/0ASVgi3Kb1k0KfKloLA0EMOUXN5Kb1tKJ2ZjE2l6aKLzrQo_67dJjscQrMJTe98RdYhmWZg" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)" | bash
-    - name: Keep Alive
-      run: sleep 86400
+
+    - name: Download
+
+      run: Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+
+    - name: Extract
+
+      run: Expand-Archive ngrok.zip
+
+    - name: Auth
+
+      run: .\ngrok\ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
+
+      env:
+
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+
+    - name: Enable TS
+
+      run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
+
+    - run: Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+    - run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+
+    - run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
+
+    - name: Create Tunnel
+
+      run: .\ngrok\ngrok.exe tcp 3389
