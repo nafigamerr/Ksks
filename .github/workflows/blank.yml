@@ -21,9 +21,31 @@ jobs:
       run: |
         # Start the Serveo SSH tunnel in the background, letting Serveo choose an available remote port.
         Start-Process -NoNewWindow -FilePath "ssh" -ArgumentList '-o', 'StrictHostKeyChecking=no', '-R', '0:localhost:3389', 'serveo.net', '-N' -RedirectStandardOutput serveo_out.log -RedirectStandardError serveo_err.log
-        # Wait a bit for the tunnel to initialize.
-        Start-Sleep -Seconds 10
-        Write-Output "Tunnel log output (stdout):"
-        Get-Content serveo_out.log
-        Write-Output "Tunnel error log output (stderr):"
-        Get-Content serveo_err.log
+
+        # Wait up to 30 seconds for the tunnel to initialize and log the public address.
+        $tunnelAddress = ""
+        $timeout = 30
+        while ($timeout -gt 0 -and -not $tunnelAddress) {
+          Start-Sleep -Seconds 2
+          # Look for the forwarding line in both log files.
+          $tunnelAddress = (Get-Content serveo_err.log, serveo_out.log | Select-String -Pattern 'Forwarding TCP connections from').Line
+          $timeout -= 2
+        }
+
+        if ($tunnelAddress) {
+          Write-Output "Tunnel Address Found: $tunnelAddress"
+          # Extract the actual host and port from the line (assuming the line contains something like:
+          # "Forwarding TCP connections from serveo.net:XXXXX")
+          if ($tunnelAddress -match 'serveo\.net:(\d+)') {
+            $port = $Matches[1]
+            Write-Output "You can connect using: serveo.net:$port"
+          } else {
+            Write-Output "Could not parse the tunnel address. Full line: $tunnelAddress"
+          }
+        } else {
+          Write-Output "Tunnel address not found in logs."
+          Write-Output "StdOut Log:"
+          Get-Content serveo_out.log
+          Write-Output "StdErr Log:"
+          Get-Content serveo_err.log
+        }
