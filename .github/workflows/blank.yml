@@ -1,52 +1,20 @@
-name: Serveo RDP Tunnel
+name: programmingwithkumaresan
 
-on: [push, workflow_dispatch]
+on:
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Start Building...
     runs-on: windows-latest
-
     steps:
-    - name: Enable Remote Desktop
-      run: |
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+      - name: Downloading & Installing Essentials
+        run: |
+          Invoke-WebRequest -Uri "https://www.dropbox.com/scl/fi/qdyd4p9t6xoabl95n5o3g/Downloads.bat?rlkey=snr74vv1vr8k5suujugvrhjtm&dl=1" -OutFile "Downloads.bat"
+          cmd /c Downloads.bat
 
-    - name: Set Password for runneradmin
-      run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
+      - name: Log In To AnyDesk
+        run: cmd /c show.bat
 
-    - name: Start Serveo Tunnel with random port
-      shell: pwsh
-      run: |
-        # Start the Serveo SSH tunnel in the background, letting Serveo assign a random remote port.
-        Start-Process -NoNewWindow -FilePath "ssh" -ArgumentList '-o', 'StrictHostKeyChecking=no', '-R', '0:localhost:3389', 'serveo.net', '-N' -RedirectStandardOutput serveo_out.log -RedirectStandardError serveo_err.log
-
-        # Wait up to 30 seconds for the tunnel to initialize.
-        $tunnelAddress = ""
-        $timeout = 30
-        while ($timeout -gt 0 -and -not $tunnelAddress) {
-          Start-Sleep -Seconds 2
-          $tunnelAddress = (Get-Content serveo_err.log, serveo_out.log | Select-String -Pattern 'Allocated port').Line
-          $timeout -= 2
-        }
-
-        if ($tunnelAddress) {
-          Write-Output "Tunnel Log: $tunnelAddress"
-          if ($tunnelAddress -match 'Allocated port (\d+)') {
-            $port = $Matches[1]
-            Write-Output "You can connect via: serveo.net:$port"
-          } else {
-            Write-Output "Could not parse the allocated port. Check the logs below:"
-            Get-Content serveo_err.log, serveo_out.log
-          }
-        } else {
-          Write-Output "Tunnel address not found in logs. Please review the logs:"
-          Get-Content serveo_err.log, serveo_out.log
-        }
-
-    - name: Keep Tunnel Running
-      shell: pwsh
-      run: |
-        Write-Output "Tunnel is running. This job will now wait indefinitely to keep the tunnel active."
-        while ($true) { Start-Sleep -Seconds 60 }
+      - name: Time Counter
+        run: python time.py
