@@ -19,9 +19,11 @@ jobs:
     - name: Start Serveo Tunnel with random port
       shell: pwsh
       run: |
-        # Start the Serveo SSH tunnel in the background, letting Serveo choose a random port.
-        Start-Process -NoNewWindow -FilePath "ssh" -ArgumentList '-o', 'StrictHostKeyChecking=no', '-R', '0:localhost:3389', 'serveo.net', '-N' -RedirectStandardOutput serveo.log -RedirectStandardError serveo.log
+        # Start the Serveo SSH tunnel in the background, letting Serveo choose an available remote port.
+        Start-Process -NoNewWindow -FilePath "ssh" -ArgumentList '-o', 'StrictHostKeyChecking=no', '-R', '0:localhost:3389', 'serveo.net', '-N' -RedirectStandardOutput serveo_out.log -RedirectStandardError serveo_err.log
         # Wait a bit for the tunnel to initialize.
         Start-Sleep -Seconds 10
-        Write-Output "Tunnel log output (look for 'Forwarding TCP connections'):"
-        Get-Content serveo.log
+        Write-Output "Tunnel log output (stdout):"
+        Get-Content serveo_out.log
+        Write-Output "Tunnel error log output (stderr):"
+        Get-Content serveo_err.log
