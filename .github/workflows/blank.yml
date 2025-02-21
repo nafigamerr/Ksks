@@ -14,7 +14,7 @@ jobs:
       run: Expand-Archive ngrok.zip -DestinationPath ngrok
 
     - name: Authenticate ngrok
-      run: .\ngrok\ngrok.exe authtoken YOUR_NGROK_AUTH_TOKEN
+      run: .\ngrok\ngrok.exe authtoken 2tLrYZsrKvwbXAJebDBkbvbpaWX_7r2MFtXtaqMVu6Hm7qAFy
 
     - name: Enable Remote Desktop
       run: |
