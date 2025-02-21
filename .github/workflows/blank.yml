@@ -1,4 +1,4 @@
-name: Free CI RDP
+name: Serveo RDP Tunnel
 
 on: [push, workflow_dispatch]
 
@@ -7,15 +7,6 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Download ngrok
-      run: Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
-
-    - name: Extract ngrok
-      run: Expand-Archive ngrok.zip -DestinationPath ngrok
-
-    - name: Authenticate ngrok
-      run: .\ngrok\ngrok.exe authtoken 2tLrYZsrKvwbXAJebDBkbvbpaWX_7r2MFtXtaqMVu6Hm7qAFy
-
     - name: Enable Remote Desktop
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
@@ -25,11 +16,9 @@ jobs:
     - name: Set Password for runneradmin
       run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
 
-    - name: Start ngrok TCP Tunnel
-      run: Start-Process -NoNewWindow -FilePath .\ngrok\ngrok.exe -ArgumentList "tcp 3389" -PassThru
-
-    - name: Display ngrok Tunnel URL
+    - name: Start Serveo Tunnel
+      shell: pwsh
       run: |
-        Start-Sleep -s 5
-        $tunnels = Invoke-RestMethod -Uri http://127.0.0.1:4040/api/tunnels
-        Write-Output "Your RDP Address: $($tunnels.tunnels[0].public_url)"
+        # Start the Serveo SSH tunnel in the background.
+        Start-Process -NoNewWindow -FilePath "ssh" -ArgumentList '-o StrictHostKeyChecking=no -R 3389:localhost:3389 serveo.net -N'
+        Write-Output "Tunnel initiated. Check the workflow logs for a line like 'Forwarding TCP connections from serveo.net:<port>'."
