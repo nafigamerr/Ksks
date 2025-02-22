@@ -1,4 +1,4 @@
-code: name: Windows - LiteManager
+name: Programmingwithkumaresan
 
 on:
   workflow_dispatch:
